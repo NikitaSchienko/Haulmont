@@ -15,5 +15,6 @@ Build and Run
 	mvn package
 	mvn jetty:run
 	```
+	mvn -Djetty.port=8181 jetty:run
 
 2. Open `http://localhost:8080` in a web browser.
