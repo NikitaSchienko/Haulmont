@@ -1,5 +1,8 @@
 package com.haulmont.testtask.decorator;
 
+import com.haulmont.testtask.dao.DoctorDao;
+import com.haulmont.testtask.dao.impl.DoctorDaoImpl;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -7,6 +10,7 @@ import java.util.Date;
 public class Decorator implements Record
 {
     protected Record record;
+
 
     public Decorator(Record record)
     {
@@ -25,19 +29,30 @@ public class Decorator implements Record
     }
 
     @Override
-    public Long getPatient() {
-        return record.getPatient();
+    public Object getPatient()
+    {
+        return this.record.getPatient();
     }
 
     @Override
-    public Long getDoctor() {
-        return record.getDoctor();
+    public Object getDoctor() {
+        return this.record.getDoctor();
     }
 
 
     @Override
     public Object getDateEnd() {
-        return record.getDateEnd();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+        try {
+            String s = (String) this.record.getDateEnd();
+            Date date = dateFormat.parse(s);
+            Long l = date.getTime();
+
+            return l;
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override
@@ -58,5 +73,40 @@ public class Decorator implements Record
             e.printStackTrace();
         }
         return null;
+    }
+
+    @Override
+    public void setDescription(String description) {
+        this.record.setDescription(description);
+    }
+
+    @Override
+    public void setId(Long id) {
+        this.record.setId(id);
+    }
+
+    @Override
+    public void setPatient(Object patient) {
+        this.record.setPatient(patient);
+    }
+
+    @Override
+    public void setDoctor(Object doctor) {
+        this.record.setDoctor(doctor);
+    }
+
+    @Override
+    public void setDateEnd(Object dateEnd) {
+        this.record.setDateEnd(dateEnd);
+    }
+
+    @Override
+    public void setPriority(String priority) {
+        this.record.setPriority(priority);
+    }
+
+    @Override
+    public void setDateStart(Object dateStart) {
+        this.record.setDateStart(dateStart);
     }
 }

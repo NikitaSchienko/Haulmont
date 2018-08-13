@@ -1,4 +1,4 @@
-package com.haulmont.testtask.dao.pojo;
+package com.haulmont.testtask.pojo;
 
 public class Patient
 {
@@ -57,18 +57,32 @@ public class Patient
         this.patronymic = patronymic;
     }
 
-    public Long getPhone()
+    public long getPhone()
     {
         return phone;
     }
 
-    public void setPhone(long phone)
-    {
+    public void setPhone(long phone) {
         this.phone = phone;
     }
 
     @Override
     public String toString() {
         return "Пациент: " + surname + " "+name +" "+ patronymic;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Patient patient = (Patient) o;
+
+        return id != null ? id.equals(patient.id) : patient.id == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
     }
 }

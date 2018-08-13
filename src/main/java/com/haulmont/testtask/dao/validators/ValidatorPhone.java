@@ -9,7 +9,7 @@ public class ValidatorPhone implements Validator
 {
     @Override
     public void validate(Object value) throws Validator.InvalidValueException {
-        String pattern = "(8|7)[0-9]{10}$";
+        String pattern = "^(8)[0-9]{10}$";
 
         Pattern r = Pattern.compile(pattern);
 
@@ -18,7 +18,7 @@ public class ValidatorPhone implements Validator
             Matcher m = r.matcher((String)value);
             if(!m.find())
             {
-                throw new Validator.InvalidValueException("Ошибка ввода! Неверный номер!");
+                throw new Validator.InvalidValueException("Ошибка ввода! Пример номера телефона: 89376565656");
             }
         }
 

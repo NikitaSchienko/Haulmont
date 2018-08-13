@@ -2,7 +2,8 @@ package com.haulmont.testtask.dao.impl;
 
 import com.haulmont.testtask.dao.database.Database;
 import com.haulmont.testtask.dao.DoctorDao;
-import com.haulmont.testtask.dao.pojo.Doctor;
+import com.haulmont.testtask.pojo.Doctor;
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -19,10 +20,10 @@ public class DoctorDaoImpl implements DoctorDao
         Connection dbConnection = null;
         Statement statement = null;
 
-        String selectTableSQL = "SELECT d.id, d.name ,d.surname, d.patronymic, d.specialization  FROM doctor d";
+        String selectTableSQL = "SELECT ID, NAME ,SURNAME, SURNAME, PATRONYMIC, SPECIALIZATION  FROM DOCTOR";
         try
         {
-            dbConnection = Database.getConnection();
+            dbConnection = Database.getInstance().getConnection();
             statement = dbConnection.createStatement();
 
             ResultSet rs = statement.executeQuery(selectTableSQL);
@@ -30,11 +31,11 @@ public class DoctorDaoImpl implements DoctorDao
             while (rs.next())
             {
                 Doctor doctor = new Doctor(
-                        rs.getLong("id"),
-                        rs.getString("name"),
-                        rs.getString("surname"),
-                        rs.getString("patronymic"),
-                        rs.getString("specialization")
+                        rs.getLong("ID"),
+                        rs.getString("NAME"),
+                        rs.getString("SURNAME"),
+                        rs.getString("PATRONYMIC"),
+                        rs.getString("SPECIALIZATION")
                 );
 
                 doctors.add(doctor);
@@ -57,8 +58,46 @@ public class DoctorDaoImpl implements DoctorDao
     }
 
     @Override
-    public Doctor findDoctor(Long id) {
-        return null;
+    public Doctor findDoctor(Long id) throws SQLException {
+
+        Doctor doctor = null;
+
+        Connection dbConnection = null;
+        Statement statement = null;
+
+        String selectTableSQL = "SELECT ID, NAME ,SURNAME, PATRONYMIC, SPECIALIZATION  FROM DOCTOR  WHERE ID = "+id;
+        try
+        {
+            dbConnection = Database.getInstance().getConnection();
+            statement = dbConnection.createStatement();
+
+            ResultSet rs = statement.executeQuery(selectTableSQL);
+
+            if(rs.next()) {
+                doctor = new Doctor(
+                        rs.getLong("id"),
+                        rs.getString("name"),
+                        rs.getString("surname"),
+                        rs.getString("patronymic"),
+                        rs.getString("specialization")
+                );
+            }
+
+        }
+        catch (SQLException e)
+        {
+            System.out.println(e.getMessage());
+        }
+        finally {
+
+            if (statement != null) {
+                statement.close();
+            }
+            if (dbConnection != null) {
+                dbConnection.close();
+            }
+        }
+        return doctor;
     }
 
     @Override
@@ -67,14 +106,14 @@ public class DoctorDaoImpl implements DoctorDao
         Connection connection = null;
         Statement statement = null;
 
-        String insertSql = "INSERT INTO doctor(name,surname,patronymic,specialization) "
+        String insertSql = "INSERT INTO doctor(NAME,SURNAME,PATRONYMIC,SPECIALIZATION) "
                 + "VALUES(?,?,?,?)";
 
         try
         {
-            connection = Database.getConnection();
+            connection = Database.getInstance().getConnection();
 
-            PreparedStatement preparedStatement = Database.getConnection().prepareStatement(insertSql);
+            PreparedStatement preparedStatement = connection.prepareStatement(insertSql);
 
             preparedStatement.setString(1, doctor.getName());
             preparedStatement.setString(2, doctor.getSurname());
@@ -109,12 +148,12 @@ public class DoctorDaoImpl implements DoctorDao
         Connection connection = null;
         PreparedStatement preparedStatement = null;
 
-        String updateSql = "UPDATE haulmont.doctor SET doctor.name = ? , doctor.surname = ? , doctor.patronymic = ? , doctor.specialization = ? " +
-                "WHERE doctor.id = ?";
+        String updateSql = "UPDATE DOCTOR SET NAME = ? , SURNAME = ? , PATRONYMIC = ? , SPECIALIZATION = ? " +
+                "WHERE ID = ?";
 
         try
         {
-            connection = Database.getConnection();
+            connection = Database.getInstance().getConnection();
             preparedStatement = connection.prepareStatement(updateSql);
 
             preparedStatement.setString(1, doctor.getName());
@@ -145,12 +184,12 @@ public class DoctorDaoImpl implements DoctorDao
     }
 
     @Override
-    public void delete(long id) throws SQLException
+    public void delete(long id) throws Exception
     {
         Connection connection = null;
         PreparedStatement statement = null;
 
-        String deleteSql = "DELETE FROM haulmont.doctor where id = ?";
+        String deleteSql = "DELETE FROM DOCTOR where ID = ?";
 
         try
         {
@@ -158,9 +197,15 @@ public class DoctorDaoImpl implements DoctorDao
             statement = connection.prepareStatement(deleteSql);
             statement.setLong(1,id);
 
+
             statement.executeUpdate();
+
         }
-        catch (SQLException e) {
+        catch (SQLIntegrityConstraintViolationException e)
+        {
+            throw new SQLIntegrityConstraintViolationException();
+        }
+        catch (Exception e) {
             e.printStackTrace();
         }
         finally {

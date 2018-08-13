@@ -1,26 +1,32 @@
 package com.haulmont.testtask.layouts;
 
-import com.haulmont.testtask.dao.DoctorDao;
 import com.haulmont.testtask.dao.PatientDao;
-import com.haulmont.testtask.dao.impl.DoctorDaoImpl;
 import com.haulmont.testtask.dao.impl.PatientDaoImpl;
-import com.haulmont.testtask.dao.pojo.Doctor;
-import com.haulmont.testtask.dao.pojo.Patient;
+import com.haulmont.testtask.pojo.Patient;
 import com.haulmont.testtask.windows.ModalWindowAddEditPatient;
-import com.haulmont.testtask.windows.ModalWindowsAddDoctor;
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import com.vaadin.data.util.BeanItemContainer;
 import com.vaadin.ui.*;
 
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 
 public class PatientLayout extends VerticalLayout
 {
+    private HorizontalLayout horizontalLayoutForButtons;
+    private Grid grid;
+
+    private Button buttonDelete;
+    private Button buttonAdd;
+    private Button buttonEdit;
+
+    private ModalWindowAddEditPatient modalWindowAddEditPatient;
 
     public PatientLayout() {
 
 
-        HorizontalLayout horizontalLayoutForButtons = new HorizontalLayout();
+        horizontalLayoutForButtons = new HorizontalLayout();
         horizontalLayoutForButtons.setSpacing(true);
 
 
@@ -30,10 +36,11 @@ public class PatientLayout extends VerticalLayout
         BeanItemContainer<Patient> container =
                 new BeanItemContainer<Patient>(Patient.class, patients);
 
-        //Create a grid bound to the container
-        Grid grid = new Grid(container);
+        grid = new Grid(container);
         grid.setCaption("Патиенты");
         grid.setSizeFull();
+
+        grid.setColumnOrder( new Object[] {"id", "surname", "name","patronymic","phone"} );
 
         grid.getColumn("id").setHidden(true);
         grid.getColumn("name").setHeaderCaption("Имя");
@@ -42,35 +49,44 @@ public class PatientLayout extends VerticalLayout
         grid.getColumn("phone").setHeaderCaption("Телефон");
 
 
-        Button buttonDelete = new Button("Удалить");
-        Button buttonAdd = new Button("Добавить");
-        Button buttonEdit = new Button("Редактировать");
+        buttonDelete = new Button("Удалить");
+        buttonAdd = new Button("Добавить");
+        buttonEdit = new Button("Редактировать");
 
         horizontalLayoutForButtons.addComponents(buttonAdd, buttonDelete, buttonEdit);
 
 
         buttonDelete.addClickListener(e -> {
             Object selected = ((Grid.SingleSelectionModel) grid.getSelectionModel()).getSelectedRow();
-            Long idSelected = (Long) grid.getContainerDataSource().getItem(selected).getItemProperty("id").getValue();
+            if(selected != null) {
+                Long idSelected = (Long) grid.getContainerDataSource().getItem(selected).getItemProperty("id").getValue();
 
-            PatientDao patientDao = new PatientDaoImpl();
+                PatientDao patientDao = new PatientDaoImpl();
 
-            try
+                try {
+                    patientDao.delete(idSelected);
+                    grid.getContainerDataSource().removeItem(selected);
+                    Notification.show("Пациент - успешно удален",
+                            "",
+                            Notification.Type.WARNING_MESSAGE);
+                } catch (SQLIntegrityConstraintViolationException ex) {
+                    Notification.show("Удаление не возможно",
+                            "",
+                            Notification.Type.WARNING_MESSAGE);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+            else
             {
-                patientDao.delete(idSelected);
-                grid.getContainerDataSource().removeItem(selected);
-                Notification.show("Пациент - успешно удален",
+                Notification.show("Выберите строку для удаления!",
                         "",
                         Notification.Type.WARNING_MESSAGE);
-            }
-            catch (SQLException ex)
-            {
-                ex.printStackTrace();
             }
         });
 
         buttonAdd.addClickListener(e -> {
-            ModalWindowAddEditPatient modalWindowAddEditPatient = new ModalWindowAddEditPatient(container);
+            modalWindowAddEditPatient = new ModalWindowAddEditPatient(container);
 
             modalWindowAddEditPatient.setHeight("400px");
             modalWindowAddEditPatient.setWidth("500px");
@@ -79,17 +95,26 @@ public class PatientLayout extends VerticalLayout
         });
 
         buttonEdit.addClickListener(e -> {
-            ModalWindowAddEditPatient modalWindowAddEditPatient = new ModalWindowAddEditPatient(container);
+            modalWindowAddEditPatient = new ModalWindowAddEditPatient(container);
 
             Patient selected = (Patient)((Grid.SingleSelectionModel) grid.getSelectionModel()).getSelectedRow();
 
-            modalWindowAddEditPatient.setCurrentPatient(selected);
+            if(selected != null)
+            {
+                modalWindowAddEditPatient.setCurrentPatient(selected);
 
-            modalWindowAddEditPatient.setHeight("400px");
-            modalWindowAddEditPatient.setWidth("500px");
+                modalWindowAddEditPatient.setHeight("400px");
+                modalWindowAddEditPatient.setWidth("500px");
 
-            // Add it to the root component
-            UI.getCurrent().addWindow(modalWindowAddEditPatient);
+
+                UI.getCurrent().addWindow(modalWindowAddEditPatient);
+            }
+            else
+            {
+                Notification.show("Выберите строку для редактирования",
+                        "",
+                        Notification.Type.WARNING_MESSAGE);
+            }
         });
 
 

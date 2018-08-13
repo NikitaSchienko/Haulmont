@@ -1,8 +1,9 @@
 package com.haulmont.testtask;
 
 import com.haulmont.testtask.dao.DoctorDao;
+import com.haulmont.testtask.dao.database.Database;
 import com.haulmont.testtask.dao.impl.DoctorDaoImpl;
-import com.haulmont.testtask.dao.pojo.Doctor;
+import com.haulmont.testtask.pojo.Doctor;
 import com.haulmont.testtask.layouts.DoctorLayout;
 import com.haulmont.testtask.layouts.PatientLayout;
 import com.haulmont.testtask.layouts.RecipeLayout;
@@ -11,27 +12,38 @@ import com.vaadin.server.VaadinRequest;
 import com.vaadin.ui.*;
 import com.vaadin.ui.themes.ValoTheme;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
 @Theme(ValoTheme.THEME_NAME)
 public class MainUI extends UI {
 
+    private VerticalLayout layout;
+    private TabSheet tabSheet;
+
+    private DoctorLayout doctorLayout;
+    private PatientLayout patientLayout;
+    private RecipeLayout recipeLayout;
+
+
     @Override
     protected void init(VaadinRequest request)
     {
-        VerticalLayout layout = new VerticalLayout();
+
+
+        layout = new VerticalLayout();
         layout.setSpacing(true);
         layout.setMargin(true);
 
-        TabSheet tabSheet = new TabSheet();
+        tabSheet = new TabSheet();
         tabSheet.setCaptionAsHtml(true);
         tabSheet.setCaption("<h1>Медицинская система \"Haulmont\"</h1>");
 
 
-        DoctorLayout doctorLayout = new DoctorLayout();
-        PatientLayout patientLayout = new PatientLayout();
-        RecipeLayout recipeLayout = new RecipeLayout();
+        doctorLayout = new DoctorLayout();
+        patientLayout = new PatientLayout();
+        recipeLayout = new RecipeLayout();
 
 
         tabSheet.addTab(doctorLayout, "Врачи");
@@ -43,22 +55,4 @@ public class MainUI extends UI {
 
     }
 
-    private List<Doctor> createTable()
-    {
-        List<Doctor> doctors = null;
-
-        DoctorDao doctorDao = new DoctorDaoImpl();
-        try
-        {
-            doctors = doctorDao.findAll();
-        }
-        catch (SQLException e)
-        {
-            e.printStackTrace();
-        }
-        finally
-        {
-            return doctors;
-        }
-    }
 }

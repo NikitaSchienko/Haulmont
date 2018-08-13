@@ -1,4 +1,4 @@
-package com.haulmont.testtask.dao.pojo;
+package com.haulmont.testtask.pojo;
 
 public class Doctor
 {
@@ -70,5 +70,24 @@ public class Doctor
     @Override
     public String toString() {
         return specialization + ": \""+surname + " " + name + " " + patronymic+"\"";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Doctor doctor = (Doctor) o;
+
+        if (id != null ? !id.equals(doctor.id) : doctor.id != null) return false;
+        if (name != null ? !name.equals(doctor.name) : doctor.name != null) return false;
+        if (surname != null ? !surname.equals(doctor.surname) : doctor.surname != null) return false;
+        if (patronymic != null ? !patronymic.equals(doctor.patronymic) : doctor.patronymic != null) return false;
+        return specialization != null ? specialization.equals(doctor.specialization) : doctor.specialization == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
     }
 }

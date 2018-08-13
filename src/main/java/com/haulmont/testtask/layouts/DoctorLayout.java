@@ -2,30 +2,35 @@ package com.haulmont.testtask.layouts;
 
 import com.haulmont.testtask.dao.DoctorDao;
 import com.haulmont.testtask.dao.impl.DoctorDaoImpl;
-import com.haulmont.testtask.dao.pojo.Doctor;
-import com.haulmont.testtask.windows.ModalWindowsAddDoctor;
+import com.haulmont.testtask.pojo.Doctor;
+import com.haulmont.testtask.windows.ModalWindowChartDoctor;
+import com.haulmont.testtask.windows.ModalWindowsAddEditDoctor;
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import com.vaadin.data.util.BeanItemContainer;
-import com.vaadin.shared.Position;
 import com.vaadin.ui.*;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 
 public class DoctorLayout extends VerticalLayout
 {
     private Grid grid;
 
+    private HorizontalLayout horizontalLayoutForButtons;
+
+    private Button buttonDelete;
+    private Button buttonAdd;
+    private Button buttonEdit;
+    private Button buttonStatistics;
+
+    private ModalWindowsAddEditDoctor modalWindowsAddEditDoctor;
+
     public DoctorLayout()
     {
 
-        HorizontalLayout horizontalLayoutForButtons = new HorizontalLayout();
+        horizontalLayoutForButtons = new HorizontalLayout();
         horizontalLayoutForButtons.setSpacing(true);
-
-        grid = new Grid();
-
-
-        grid.setCaption("Врачи");
 
 
         List<Doctor> doctors = createTable();
@@ -33,9 +38,12 @@ public class DoctorLayout extends VerticalLayout
         BeanItemContainer<Doctor> container =
                 new BeanItemContainer<Doctor>(Doctor.class, doctors);
 
-        //Create a grid bound to the container
+
         grid = new Grid(container);
+        grid.setCaption("Врачи");
         grid.setSizeFull();
+
+        grid.setColumnOrder( new Object[] {"id", "surname", "name","patronymic","specialization"} );
 
         grid.getColumn("id").setHidden(true);
         grid.getColumn("name").setHeaderCaption("Имя");
@@ -45,56 +53,85 @@ public class DoctorLayout extends VerticalLayout
 
 
 
-        Button buttonDelete = new Button("Удалить");
-        Button buttonAdd = new Button("Добавить");
-        Button buttonEdit = new Button("Редактировать");
-        Button buttonStatistics = new Button("Показать статистику");
+        buttonDelete = new Button("Удалить");
+        buttonAdd = new Button("Добавить");
+        buttonEdit = new Button("Редактировать");
+        buttonStatistics = new Button("Показать статистику");
 
         horizontalLayoutForButtons.addComponents(buttonAdd,buttonDelete,buttonEdit, buttonStatistics);
 
         buttonDelete.addClickListener(e -> {
             Object selected = ((Grid.SingleSelectionModel) grid.getSelectionModel()).getSelectedRow();
-            Long idSelected = (Long) grid.getContainerDataSource().getItem(selected).getItemProperty("id").getValue();
+            if(selected != null) {
+                Long idSelected = (Long) grid.getContainerDataSource().getItem(selected).getItemProperty("id").getValue();
 
-            DoctorDao doctorDao = new DoctorDaoImpl();
+                DoctorDao doctorDao = new DoctorDaoImpl();
 
-            try
+                try {
+                    doctorDao.delete(idSelected);
+                    grid.getContainerDataSource().removeItem(selected);
+                    Notification.show("Врач - успешно удален",
+                            "",
+                            Notification.Type.WARNING_MESSAGE);
+                } catch (SQLIntegrityConstraintViolationException mysqlex) {
+                    Notification.show("Невозможно - удалить",
+                            "",
+                            Notification.Type.WARNING_MESSAGE);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+            else
             {
-                doctorDao.delete(idSelected);
-                grid.getContainerDataSource().removeItem(selected);
-                Notification.show("Врач - успешно удален",
+                Notification.show("Выберите строку для удаления!",
                         "",
                         Notification.Type.WARNING_MESSAGE);
             }
-            catch (SQLException ex)
-            {
-                ex.printStackTrace();
-            }
 
+        });
+
+
+        buttonStatistics.addClickListener(e -> {
+            ModalWindowChartDoctor modalWindowChartDoctor = new ModalWindowChartDoctor();
+
+            modalWindowChartDoctor.setHeight("550px");
+            modalWindowChartDoctor.setWidth("700px");
+
+            UI.getCurrent().addWindow(modalWindowChartDoctor);
         });
 
         buttonAdd.addClickListener(e -> {
-            ModalWindowsAddDoctor modalWindowsAddDoctor = new ModalWindowsAddDoctor(container);
+            modalWindowsAddEditDoctor = new ModalWindowsAddEditDoctor(container);
 
-            modalWindowsAddDoctor.setHeight("400px");
-            modalWindowsAddDoctor.setWidth("500px");
+            modalWindowsAddEditDoctor.setHeight("400px");
+            modalWindowsAddEditDoctor.setWidth("500px");
 
-            UI.getCurrent().addWindow(modalWindowsAddDoctor);
+            UI.getCurrent().addWindow(modalWindowsAddEditDoctor);
         });
 
         buttonEdit.addClickListener(e -> {
-            ModalWindowsAddDoctor modalWindowsAddDoctor = new ModalWindowsAddDoctor(container);
+            modalWindowsAddEditDoctor = new ModalWindowsAddEditDoctor(container);
 
             Doctor selected = (Doctor)((Grid.SingleSelectionModel) grid.getSelectionModel()).getSelectedRow();
 
-            modalWindowsAddDoctor.setCurrentDoctor(selected);
+            if(selected != null) {
+                modalWindowsAddEditDoctor.setCurrentDoctor(selected);
 
-            modalWindowsAddDoctor.setHeight("400px");
-            modalWindowsAddDoctor.setWidth("500px");
+                modalWindowsAddEditDoctor.setHeight("400px");
+                modalWindowsAddEditDoctor.setWidth("500px");
 
-            // Add it to the root component
-            UI.getCurrent().addWindow(modalWindowsAddDoctor);
+                // Add it to the root component
+                UI.getCurrent().addWindow(modalWindowsAddEditDoctor);
+            }
+            else
+            {
+                Notification.show("Выберите строку для редактирования!",
+                        "",
+                        Notification.Type.WARNING_MESSAGE);
+            }
         });
+
+
 
         this.setMargin(true);
         this.setSpacing(true);
@@ -104,21 +141,7 @@ public class DoctorLayout extends VerticalLayout
 
     }
 
-    private void updateDateTable()
-    {
-        grid.clearSortOrder();
-        //grid.setColumnOrder("name", "born");
-//        for(int i = 0; i < doctors.size(); i++)
-//        {
-//            grid.addRow(
-//                    doctors.get(i).getName(),
-//                    doctors.get(i).getSurname(),
-//                    doctors.get(i).getPatronymic(),
-//                    doctors.get(i).getSpecialization(),
-//                    doctors.get(i).getId()
-//            );
-//        }
-    }
+
 
 
     private List<Doctor> createTable()
